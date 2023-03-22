@@ -40,12 +40,12 @@ N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
 
-BASE_POOL: constant(address) = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
-BASE_LP_TOKEN: constant(address) = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490
+BASE_POOL: constant(address) = 0xddA1B81690b530DE3C48B3593923DF0A6C5fe92E
+BASE_LP_TOKEN: constant(address) = 0xddA1B81690b530DE3C48B3593923DF0A6C5fe92E
 BASE_COINS: constant(address[3]) = [
-    0x6B175474E89094C44Da98b954EedeAC495271d0F,  # DAI
-    0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,  # USDC
-    0xdAC17F958D2ee523a2206206994597C13D831ec7,  # USDT
+    0x36F8d0D0573ae92326827C4a82Fe4CE4C244cAb6,  # maDAI
+    0xA5269A8e31B93Ff27B887B56720A25F844db0529,  # maUSDC
+    0xAFe7131a57E44f832cb2dE78ade38CaD644aaC2f,  # maUSDT
 ]
 
 # coin -> pool -> is approved to transfer?
@@ -99,11 +99,7 @@ def add_liquidity(
         coin: address = base_coins[base_idx]
 
         ERC20(coin).transferFrom(msg.sender, self, amount)
-        # Handle potential Tether fees
-        if i == N_ALL_COINS - 1:
-            base_amounts[base_idx] = ERC20(coin).balanceOf(self)
-        else:
-            base_amounts[base_idx] = amount
+        base_amounts[base_idx] = amount
 
     # Deposit to the base pool
     if deposit_base:

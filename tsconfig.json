@@ -10,6 +10,6 @@
     "resolveJsonModule": true,
     "declaration": true
   },
-  "include": ["test"],
+  "include": ["types", "test"],
   "files": ["./hardhat.config.ts"]
 }

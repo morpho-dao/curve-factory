@@ -1,4 +1,6 @@
 import * as dotenv from "dotenv";
+import "ethers-maths";
+import "hardhat-deal";
 import "hardhat-gas-reporter";
 import "hardhat-tracer";
 import { HardhatUserConfig } from "hardhat/config";
@@ -6,6 +8,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-vyper";
+import "@typechain/hardhat";
 
 dotenv.config();
 
@@ -62,6 +65,9 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 300000,
+  },
+  typechain: {
+    outDir: "types/",
   },
   tracer: {
     defaultVerbosity: 1,

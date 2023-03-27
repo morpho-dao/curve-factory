@@ -145,3 +145,8 @@ dmypy.json
 
 # profiling data
 .prof
+
+# hardhat
+artifacts
+cache
+

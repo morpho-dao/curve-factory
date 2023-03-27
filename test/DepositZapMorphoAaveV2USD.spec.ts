@@ -1,9 +1,9 @@
 import { expect } from "chai";
-import { BigNumber, constants } from "ethers";
+import { BigNumber, BigNumberish, constants } from "ethers";
 import hre, { ethers } from "hardhat";
 import { deal } from "hardhat-deal";
 
-import { setNextBlockBaseFeePerGas } from "@nomicfoundation/hardhat-network-helpers";
+import { setNextBlockBaseFeePerGas, SnapshotRestorer, takeSnapshot } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import { ERC20, ERC20__factory } from "@morpho-labs/morpho-ethers-contract";
@@ -31,6 +31,8 @@ describe("DepositZapMorphoAaveV2USD", () => {
 
   let pool: ERC20;
   let initialSupply: BigNumber;
+
+  let snapshot: SnapshotRestorer;
 
   beforeEach(async () => {
     [deployer, user] = await ethers.getSigners();
@@ -83,14 +85,24 @@ describe("DepositZapMorphoAaveV2USD", () => {
       );
 
     initialSupply = await pool.balanceOf(constants.AddressZero);
+
+    snapshot = await takeSnapshot();
+  });
+
+  afterEach(async () => {
+    await snapshot.restore();
   });
 
   it("should deposit DAI alone", async () => {
     await dai.approve(zap.address, initialDepositDai);
 
-    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, [initialDepositDai, 0, 0], 0);
+    const amounts: [BigNumberish, BigNumberish, BigNumberish] = [initialDepositDai, 0, 0];
 
-    expect((await pool.balanceOf(user.address)).formatWad(2)).eq("994.18");
+    const expLpAmount = (await zap.calc_token_amount(pool.address, amounts, true)).percentSub(2);
+
+    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, amounts, expLpAmount);
+
+    expect((await pool.balanceOf(user.address)).formatWad(2)).eq(expLpAmount.formatWad(2));
     expect((await pool.balanceOf(deployer.address)).formatWad(0)).eq("0");
     expect((await pool.balanceOf(constants.AddressZero)).toString()).eq(initialSupply.toString());
 
@@ -106,9 +118,13 @@ describe("DepositZapMorphoAaveV2USD", () => {
   it("should deposit USDC alone", async () => {
     await usdc.approve(zap.address, initialDepositUsdc);
 
-    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, [0, initialDepositUsdc, 0], 0);
+    const amounts: [BigNumberish, BigNumberish, BigNumberish] = [0, initialDepositUsdc, 0];
 
-    expect((await pool.balanceOf(user.address)).formatWad(2)).eq("1989.60");
+    const expLpAmount = (await zap.calc_token_amount(pool.address, amounts, true)).percentSub(2);
+
+    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, amounts, expLpAmount);
+
+    expect((await pool.balanceOf(user.address)).formatWad(2)).eq(expLpAmount.formatWad(2));
     expect((await pool.balanceOf(deployer.address)).formatWad(0)).eq("0");
     expect((await pool.balanceOf(constants.AddressZero)).toString()).eq(initialSupply.toString());
 
@@ -124,9 +140,13 @@ describe("DepositZapMorphoAaveV2USD", () => {
   it("should deposit USDT alone", async () => {
     await usdt.approve(zap.address, initialDepositUsdt);
 
-    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, [0, 0, initialDepositUsdt], 0);
+    const amounts: [BigNumberish, BigNumberish, BigNumberish] = [0, 0, initialDepositUsdt];
 
-    expect((await pool.balanceOf(user.address)).formatWad(2)).eq("2979.02");
+    const expLpAmount = (await zap.calc_token_amount(pool.address, amounts, true)).percentSub(3);
+
+    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, amounts, expLpAmount);
+
+    expect((await pool.balanceOf(user.address)).formatWad(2)).eq(expLpAmount.formatWad(2));
     expect((await pool.balanceOf(deployer.address)).formatWad(0)).eq("0");
     expect((await pool.balanceOf(constants.AddressZero)).toString()).eq(initialSupply.toString());
 
@@ -144,13 +164,17 @@ describe("DepositZapMorphoAaveV2USD", () => {
     await usdc.approve(zap.address, initialDepositUsdc);
     await usdt.approve(zap.address, initialDepositUsdt);
 
-    await zap["add_liquidity(address,uint256[3],uint256)"](
-      pool.address,
-      [initialDepositDai, initialDepositUsdc, initialDepositUsdt],
-      0
-    );
+    const amounts: [BigNumberish, BigNumberish, BigNumberish] = [
+      initialDepositDai,
+      initialDepositUsdc,
+      initialDepositUsdt,
+    ];
 
-    expect((await pool.balanceOf(user.address)).formatWad(2)).eq("5959.34");
+    const expLpAmount = (await zap.calc_token_amount(pool.address, amounts, true)).percentSub(2);
+
+    await zap["add_liquidity(address,uint256[3],uint256)"](pool.address, amounts, expLpAmount);
+
+    expect((await pool.balanceOf(user.address)).formatWad(2)).eq(expLpAmount.formatWad(2));
     expect((await pool.balanceOf(deployer.address)).formatWad(0)).eq("0");
     expect((await pool.balanceOf(constants.AddressZero)).toString()).eq(initialSupply.toString());
 

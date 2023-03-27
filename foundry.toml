@@ -1,2 +1,5 @@
 [profile.default]
+names = true
+sizes = true
 ffi = true
+eth_rpc_url = "https://rpc.ankr.com/eth"

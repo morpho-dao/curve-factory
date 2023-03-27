@@ -18,11 +18,6 @@ contract BaseTest is Test {
 
     uint256 private constant MAX_AMOUNT = 1e20 ether;
 
-    /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of DUST_THRESHOLD.
-    function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal {
-        assertApproxEqAbs(a, b, Constants.DUST_THRESHOLD, err);
-    }
-
     /// @dev Asserts a is approximately less than or equal to b, with a maximum absolute difference of maxDelta.
     function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
         assertLe(a, b, err);

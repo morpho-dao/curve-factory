@@ -27,6 +27,7 @@ interface SupplyVault:
     def redeem(shares: uint256, receiver: address, owner: address) -> uint256: nonpayable
     def previewDeposit(assets: uint256) -> uint256: view
     def previewWithdraw(assets: uint256) -> uint256: view
+    def previewRedeem(shares: uint256) -> uint256: view
     def asset() -> address: view
 
 
@@ -88,6 +89,8 @@ def _calc_shares(_assets: uint256[BASE_N_COINS], _is_deposit: bool) -> uint256[B
 
     return shares
 
+event Transfer:
+    value: uint256
 
 @external
 def add_liquidity(
@@ -104,6 +107,8 @@ def add_liquidity(
     @param _receiver Address that receives the LP tokens
     @return Amount of LP tokens received by depositing
     """
+    log Transfer(1)
+
     shares: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     base_coins: address[BASE_N_COINS] = BASE_COINS
     ma_coins: address[BASE_N_COINS] = MA_COINS
@@ -255,7 +260,12 @@ def calc_withdraw_one_coin(
     @param i Index value of the underlying coin to withdraw
     @return Amount of coin received
     """
-    return CurveBase(BASE_POOL).calc_withdraw_one_coin(_token_amount, i)
+    shares: uint256 = CurveBase(BASE_POOL).calc_withdraw_one_coin(_token_amount, i)
+    
+    ma_coins: address[BASE_N_COINS] = MA_COINS
+    ma_coin: address = ma_coins[i]
+
+    return SupplyVault(ma_coin).previewRedeem(shares)
 
 
 @view

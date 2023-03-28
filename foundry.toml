@@ -2,4 +2,8 @@
 names = true
 sizes = true
 ffi = true
-eth_rpc_url = "https://rpc.ankr.com/eth"
+fs_permissions = [{ access = "read", path = "./config/"}]
+
+
+[rpc_endpoints]
+mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"

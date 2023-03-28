@@ -18,17 +18,17 @@ interface IDepositZapMorphoAaveV2USD {
         external
         returns (uint256[BASE_N_COINS] memory);
 
-    function remove_liquidity_one_coin(address pool, uint256 amount, uint256 i, uint256 minAmount)
+    function remove_liquidity_one_coin(address pool, uint256 amount, int128 i, uint256 minAmount)
         external
         returns (uint256);
-    function remove_liquidity_one_coin(address pool, uint256 amount, uint256 i, uint256 minAmount, address receiver)
+    function remove_liquidity_one_coin(address pool, uint256 amount, int128 i, uint256 minAmount, address receiver)
         external
         returns (uint256);
 
-    function remove_liquidity_imbalanced(address pool, uint256[BASE_N_COINS] calldata amounts, uint256 maxAmount)
+    function remove_liquidity_imbalance(address pool, uint256[BASE_N_COINS] calldata amounts, uint256 maxAmount)
         external
         returns (uint256);
-    function remove_liquidity_imbalanced(
+    function remove_liquidity_imbalance(
         address pool,
         uint256[BASE_N_COINS] calldata amounts,
         uint256 maxAmount,

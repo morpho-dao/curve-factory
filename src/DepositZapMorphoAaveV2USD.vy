@@ -27,6 +27,7 @@ interface SupplyVault:
     def redeem(shares: uint256, receiver: address, owner: address) -> uint256: nonpayable
     def previewDeposit(assets: uint256) -> uint256: view
     def previewWithdraw(assets: uint256) -> uint256: view
+    def previewRedeem(shares: uint256) -> uint256: view
     def asset() -> address: view
 
 
@@ -259,7 +260,12 @@ def calc_withdraw_one_coin(
     @param i Index value of the underlying coin to withdraw
     @return Amount of coin received
     """
-    return CurveBase(BASE_POOL).calc_withdraw_one_coin(_token_amount, i)
+    shares: uint256 = CurveBase(BASE_POOL).calc_withdraw_one_coin(_token_amount, i)
+    
+    ma_coins: address[BASE_N_COINS] = MA_COINS
+    ma_coin: address = ma_coins[i]
+
+    return SupplyVault(ma_coin).previewRedeem(shares)
 
 
 @view

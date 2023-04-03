@@ -20,7 +20,6 @@ interface CurveBase:
     def calc_withdraw_one_coin(token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
-    def fee() -> uint256: view
 
 interface SupplyVault:
     def deposit(assets: uint256, receiver: address) -> uint256: nonpayable
@@ -32,9 +31,6 @@ interface SupplyVault:
 
 
 BASE_N_COINS: constant(int128) = 3
-
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
 
 BASE_POOL: constant(address) = 0xddA1B81690b530DE3C48B3593923DF0A6C5fe92E
 BASE_COINS: constant(address[BASE_N_COINS]) = [
@@ -94,7 +90,6 @@ event Transfer:
 
 @external
 def add_liquidity(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _deposit_amounts: uint256[BASE_N_COINS],
     _min_mint_amount: uint256,
     _receiver: address = msg.sender,
@@ -131,7 +126,6 @@ def add_liquidity(
 
 @external
 def remove_liquidity(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _burn_amount: uint256,
     _min_amounts: uint256[BASE_N_COINS],
     _receiver: address = msg.sender
@@ -169,11 +163,10 @@ def remove_liquidity(
 
 @external
 def remove_liquidity_one_coin(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _burn_amount: uint256,
     i: int128,
     _min_amount: uint256,
-    _receiver: address=msg.sender
+    _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw and unwrap a single coin from the pool
@@ -192,7 +185,7 @@ def remove_liquidity_one_coin(
     min_shares: uint256 = SupplyVault(ma_coin).previewWithdraw(_min_amount)
 
     # Withdraw a base pool coin
-    shares: uint256 = CurveBase(BASE_POOL).remove_liquidity_one_coin(_burn_amount, i, min_shares) # TODO: does not support fee on transfer
+    shares: uint256 = CurveBase(BASE_POOL).remove_liquidity_one_coin(_burn_amount, i, min_shares) # does not support fee on transfer
 
 
     return SupplyVault(ma_coin).redeem(shares, _receiver, self)
@@ -200,10 +193,9 @@ def remove_liquidity_one_coin(
 
 @external
 def remove_liquidity_imbalance(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _amounts: uint256[BASE_N_COINS],
     _max_burn_amount: uint256,
-    _receiver: address=msg.sender
+    _receiver: address = msg.sender
 ) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -213,10 +205,6 @@ def remove_liquidity_imbalance(
     @param _receiver Address that receives the LP tokens
     @return Actual amount of the LP token burned in the withdrawal
     """
-    fee: uint256 = CurveBase(BASE_POOL).fee() * BASE_N_COINS / (4 * (BASE_N_COINS - 1))
-    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
-    # TODO: what to do with the fee??
-
     # Transfer the LP token in
     ERC20(BASE_POOL).transferFrom(msg.sender, self, _max_burn_amount)
 
@@ -249,7 +237,6 @@ def remove_liquidity_imbalance(
 @view
 @external
 def calc_withdraw_one_coin(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _token_amount: uint256,
     i: int128
 ) -> uint256:
@@ -271,7 +258,6 @@ def calc_withdraw_one_coin(
 @view
 @external
 def calc_token_amount(
-    _pool: address, # TODO: should we use this in place of BASE_POOL?
     _amounts: uint256[BASE_N_COINS],
     _is_deposit: bool
 ) -> uint256:

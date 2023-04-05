@@ -85,8 +85,6 @@ def _calc_shares(_assets: uint256[BASE_N_COINS], _is_deposit: bool) -> uint256[B
 
     return shares
 
-event Transfer:
-    value: uint256
 
 @external
 def add_liquidity(
@@ -102,8 +100,6 @@ def add_liquidity(
     @param _receiver Address that receives the LP tokens
     @return Amount of LP tokens received by depositing
     """
-    log Transfer(1)
-
     shares: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     base_coins: address[BASE_N_COINS] = BASE_COINS
     ma_coins: address[BASE_N_COINS] = MA_COINS

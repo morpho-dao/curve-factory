@@ -183,7 +183,6 @@ def remove_liquidity_one_coin(
     # Withdraw a base pool coin
     shares: uint256 = CurveBase(BASE_POOL).remove_liquidity_one_coin(_burn_amount, i, min_shares) # does not support fee on transfer
 
-
     return SupplyVault(ma_coin).redeem(shares, _receiver, self)
 
 

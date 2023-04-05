@@ -21,7 +21,7 @@ interface CurveBase:
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
 
-interface SupplyVault:
+interface ERC4626:
     def deposit(assets: uint256, receiver: address) -> uint256: nonpayable
     def redeem(shares: uint256, receiver: address, owner: address) -> uint256: nonpayable
     def previewDeposit(assets: uint256) -> uint256: view
@@ -31,18 +31,10 @@ interface SupplyVault:
 
 
 BASE_N_COINS: constant(uint256) = 3
-
 BASE_POOL: constant(address) = 0xddA1B81690b530DE3C48B3593923DF0A6C5fe92E
-BASE_COINS: constant(address[BASE_N_COINS]) = [
-    0x6B175474E89094C44Da98b954EedeAC495271d0F,  # DAI
-    0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,  # USDC
-    0xdAC17F958D2ee523a2206206994597C13D831ec7,  # USDT
-]
-MA_COINS: constant(address[BASE_N_COINS]) = [
-    0x36F8d0D0573ae92326827C4a82Fe4CE4C244cAb6,  # maDAI
-    0xA5269A8e31B93Ff27B887B56720A25F844db0529,  # maUSDC
-    0xAFe7131a57E44f832cb2dE78ade38CaD644aaC2f,  # maUSDT
-]
+
+erc20_coins: public(address[BASE_N_COINS])
+erc4626_coins: public(address[BASE_N_COINS])
 
 
 @external
@@ -50,15 +42,15 @@ def __init__():
     """
     @notice Contract constructor
     """
-    base_coins: address[BASE_N_COINS] = BASE_COINS
-    ma_coins: address[BASE_N_COINS] = MA_COINS
-
     for i in range(BASE_N_COINS):
-        coin: address = base_coins[i]
-        ma_coin: address = ma_coins[i]
+        erc4626: address = CurveBase(BASE_POOL).coins(i)
+        erc20: address = ERC4626(erc4626).asset()
 
-        ERC20(coin).approve(ma_coin, MAX_UINT256)
-        ERC20(ma_coin).approve(BASE_POOL, MAX_UINT256)
+        self.erc20_coins[i] = erc20
+        self.erc4626_coins[i] = erc4626
+
+        ERC20(erc20).approve(erc4626, MAX_UINT256)
+        ERC20(erc4626).approve(BASE_POOL, MAX_UINT256)
 
 
 @view
@@ -74,14 +66,13 @@ def _calc_shares(_assets: uint256[BASE_N_COINS], _is_deposit: bool) -> uint256[B
     shares: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
 
     # Convert all amounts into shares
-    ma_coins: address[BASE_N_COINS] = MA_COINS
     for i in range(BASE_N_COINS):
-        ma_coin: address = ma_coins[i]
+        erc4626_coin: address = self.erc4626_coins[i]
 
         if _is_deposit:
-            shares[i] = SupplyVault(ma_coin).previewDeposit(_assets[i])
+            shares[i] = ERC4626(erc4626_coin).previewDeposit(_assets[i])
         else:
-            shares[i] = SupplyVault(ma_coin).previewWithdraw(_assets[i])
+            shares[i] = ERC4626(erc4626_coin).previewWithdraw(_assets[i])
 
     return shares
 
@@ -101,8 +92,6 @@ def add_liquidity(
     @return Amount of LP tokens received by depositing
     """
     shares: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
-    base_coins: address[BASE_N_COINS] = BASE_COINS
-    ma_coins: address[BASE_N_COINS] = MA_COINS
 
     # Deposit all coins into vaults
     for i in range(BASE_N_COINS):
@@ -110,11 +99,11 @@ def add_liquidity(
         if amount == 0:
             continue
 
-        coin: address = base_coins[i]
-        ma_coin: address = ma_coins[i]
+        erc20_coin: address = self.erc20_coins[i]
+        erc4626_coin: address = self.erc4626_coins[i]
 
-        ERC20(coin).transferFrom(msg.sender, self, amount)
-        shares[i] = SupplyVault(ma_coin).deposit(amount, self)
+        ERC20(erc20_coin).transferFrom(msg.sender, self, amount)
+        shares[i] = ERC4626(erc4626_coin).deposit(amount, self)
 
     # Deposit to the base pool
     return CurveBase(BASE_POOL).add_liquidity(shares, _min_mint_amount, _receiver)
@@ -143,16 +132,15 @@ def remove_liquidity(
     base_shares: uint256[BASE_N_COINS] = CurveBase(BASE_POOL).remove_liquidity(_burn_amount, min_shares)
 
     # Withdraw all coins from vaults
-    ma_coins: address[BASE_N_COINS] = MA_COINS
     amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     for i in range(BASE_N_COINS):
         shares: uint256 = base_shares[i]
         if shares == 0:
             continue
 
-        ma_coin: address = ma_coins[i]
+        erc4626_coin: address = self.erc4626_coins[i]
 
-        amounts[i] = SupplyVault(ma_coin).redeem(shares, _receiver, self)
+        amounts[i] = ERC4626(erc4626_coin).redeem(shares, _receiver, self)
 
     return amounts
 
@@ -175,15 +163,14 @@ def remove_liquidity_one_coin(
     """
     ERC20(BASE_POOL).transferFrom(msg.sender, self, _burn_amount)
 
-    ma_coins: address[BASE_N_COINS] = MA_COINS
-    ma_coin: address = ma_coins[i]
+    erc4626_coin: address = self.erc4626_coins[i]
 
-    min_shares: uint256 = SupplyVault(ma_coin).previewWithdraw(_min_amount)
+    min_shares: uint256 = ERC4626(erc4626_coin).previewWithdraw(_min_amount)
 
     # Withdraw a base pool coin
     shares: uint256 = CurveBase(BASE_POOL).remove_liquidity_one_coin(_burn_amount, i, min_shares) # does not support fee on transfer
 
-    return SupplyVault(ma_coin).redeem(shares, _receiver, self)
+    return ERC4626(erc4626_coin).redeem(shares, _receiver, self)
 
 
 @external
@@ -216,15 +203,14 @@ def remove_liquidity_imbalance(
         ERC20(coin).transfer(msg.sender, leftover)
 
     # Transfer withdrawn base pool tokens to caller
-    ma_coins: address[BASE_N_COINS] = MA_COINS
     for i in range(BASE_N_COINS):
         shares: uint256 = base_shares[i]
         if shares == 0:
             continue
 
-        ma_coin: address = ma_coins[i]
+        erc4626_coin: address = self.erc4626_coins[i]
 
-        SupplyVault(ma_coin).redeem(shares, _receiver, self)
+        ERC4626(erc4626_coin).redeem(shares, _receiver, self)
 
     return burn_amount
 
@@ -243,11 +229,10 @@ def calc_withdraw_one_coin(
     @return Amount of coin received
     """
     shares: uint256 = CurveBase(BASE_POOL).calc_withdraw_one_coin(_token_amount, i)
-    
-    ma_coins: address[BASE_N_COINS] = MA_COINS
-    ma_coin: address = ma_coins[i]
 
-    return SupplyVault(ma_coin).previewRedeem(shares)
+    erc4626_coin: address = self.erc4626_coins[i]
+
+    return ERC4626(erc4626_coin).previewRedeem(shares)
 
 
 @view

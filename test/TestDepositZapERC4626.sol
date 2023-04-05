@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IDepositZapMorphoAaveV2USD, BASE_N_COINS} from "src/interfaces/IDepositZapMorphoAaveV2USD.sol";
+import {IDepositZapERC4626, BASE_N_COINS} from "src/interfaces/IDepositZapERC4626.sol";
 
 import {Vyper} from "./Vyper.sol";
 import "./BaseTest.sol";
 
-contract TestDepositZapMorphoAaveV2USD is BaseTest {
+contract TestDepositZapERC4626 is BaseTest {
     using SafeTransferLib for ERC20;
     using PercentageMath for uint256;
 
-    IDepositZapMorphoAaveV2USD zap;
+    IDepositZapERC4626 zap;
 
     uint256 internal constant INITIAL_DEPOSIT_DAI = 1_000e18;
     uint256 internal constant INITIAL_DEPOSIT_USDC = 1_000e6;
@@ -32,7 +32,7 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
     function setUp() public virtual override {
         super.setUp();
 
-        zap = IDepositZapMorphoAaveV2USD(Vyper.deploy("DepositZapMorphoAaveV2USD"));
+        zap = IDepositZapERC4626(Vyper.deploy("DepositZapERC4626"));
 
         vm.label(address(zap), "Zap");
 

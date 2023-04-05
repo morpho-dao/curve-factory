@@ -3,7 +3,7 @@ pragma solidity >=0.5.0;
 
 uint256 constant BASE_N_COINS = 3;
 
-interface IDepositZapMorphoAaveV2USD {
+interface IDepositZapERC4626 {
     function add_liquidity(uint256[BASE_N_COINS] calldata amounts, uint256 minAmount) external returns (uint256);
     function add_liquidity(uint256[BASE_N_COINS] calldata amounts, uint256 minAmount, address receiver)
         external

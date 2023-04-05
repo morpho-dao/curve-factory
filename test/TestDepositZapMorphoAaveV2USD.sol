@@ -46,7 +46,7 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         ERC20(USDC).safeApprove(address(zap), INITIAL_DEPOSIT_USDC);
         ERC20(USDT).safeApprove(address(zap), INITIAL_DEPOSIT_USDT);
 
-        initialSupply = zap.add_liquidity(POOL, INITIAL_DEPOSITS, 0, INITIAL_DEPOSITOR);
+        initialSupply = zap.add_liquidity(INITIAL_DEPOSITS, 0, INITIAL_DEPOSITOR);
     }
 
     function _assertNoDust() internal {
@@ -72,11 +72,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = INITIAL_DEPOSIT_DAI;
 
         uint256[BASE_N_COINS] memory amounts = [amount, 0, 0];
-        uint256 expectedLp = zap.calc_token_amount(POOL, amounts, true).percentSub(2);
+        uint256 expectedLp = zap.calc_token_amount(amounts, true).percentSub(2);
 
         deal(address(DAI), address(this), amount);
         ERC20(DAI).safeApprove(address(zap), amount);
-        uint256 lp = zap.add_liquidity(POOL, amounts, expectedLp, receiver);
+        uint256 lp = zap.add_liquidity(amounts, expectedLp, receiver);
 
         assertApproxGeAbs(lp, expectedLp, 1e15, "lp != expected");
 
@@ -91,11 +91,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = INITIAL_DEPOSIT_USDC;
 
         uint256[BASE_N_COINS] memory amounts = [0, amount, 0];
-        uint256 expectedLp = zap.calc_token_amount(POOL, amounts, true).percentSub(2);
+        uint256 expectedLp = zap.calc_token_amount(amounts, true).percentSub(2);
 
         deal(address(USDC), address(this), amount);
         ERC20(USDC).safeApprove(address(zap), amount);
-        uint256 lp = zap.add_liquidity(POOL, amounts, expectedLp, receiver);
+        uint256 lp = zap.add_liquidity(amounts, expectedLp, receiver);
 
         assertApproxGeAbs(lp, expectedLp, 1e15, "lp != expected");
 
@@ -110,11 +110,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = INITIAL_DEPOSIT_USDT;
 
         uint256[BASE_N_COINS] memory amounts = [0, 0, amount];
-        uint256 expectedLp = zap.calc_token_amount(POOL, amounts, true).percentSub(3);
+        uint256 expectedLp = zap.calc_token_amount(amounts, true).percentSub(3);
 
         deal(address(USDT), address(this), amount);
         ERC20(USDT).safeApprove(address(zap), amount);
-        uint256 lp = zap.add_liquidity(POOL, amounts, expectedLp, receiver);
+        uint256 lp = zap.add_liquidity(amounts, expectedLp, receiver);
 
         assertApproxGeAbs(lp, expectedLp, 1e17, "lp != expected");
 
@@ -127,7 +127,7 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
     function testDepositBalanced(address receiver) public {
         receiver = _boundReceiver(receiver);
 
-        uint256 expectedLp = zap.calc_token_amount(POOL, INITIAL_DEPOSITS, true).percentSub(2);
+        uint256 expectedLp = zap.calc_token_amount(INITIAL_DEPOSITS, true).percentSub(2);
 
         deal(DAI, address(this), INITIAL_DEPOSIT_DAI);
         deal(USDC, address(this), INITIAL_DEPOSIT_USDC);
@@ -137,7 +137,7 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         ERC20(USDC).safeApprove(address(zap), INITIAL_DEPOSIT_USDC);
         ERC20(USDT).safeApprove(address(zap), INITIAL_DEPOSIT_USDT);
 
-        uint256 lp = zap.add_liquidity(POOL, INITIAL_DEPOSITS, expectedLp, receiver);
+        uint256 lp = zap.add_liquidity(INITIAL_DEPOSITS, expectedLp, receiver);
 
         assertApproxGeAbs(lp, expectedLp, 1e18, "lp != expected");
         assertApproxEqAbs(lp, initialSupply, 1, "lp != initialSupply");
@@ -158,7 +158,7 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         vm.startPrank(INITIAL_DEPOSITOR);
         ERC20(POOL).safeApprove(address(zap), initialSupply);
         uint256[BASE_N_COINS] memory amounts =
-            zap.remove_liquidity(POOL, initialSupply, [uint256(0), uint256(0), uint256(0)], receiver);
+            zap.remove_liquidity(initialSupply, [uint256(0), uint256(0), uint256(0)], receiver);
         vm.stopPrank();
 
         assertApproxLeAbs(amounts[0], INITIAL_DEPOSIT_DAI, 1, "amounts[0]");
@@ -177,11 +177,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = initialSupply / 3;
 
         uint256 daiBalanceBefore = ERC20(DAI).balanceOf(receiver);
-        uint256 expectedDaiAmount = zap.calc_withdraw_one_coin(POOL, amount, 0);
+        uint256 expectedDaiAmount = zap.calc_withdraw_one_coin(amount, 0);
 
         vm.startPrank(INITIAL_DEPOSITOR);
         ERC20(POOL).safeApprove(address(zap), amount);
-        uint256 daiAmount = zap.remove_liquidity_one_coin(POOL, amount, 0, expectedDaiAmount, receiver);
+        uint256 daiAmount = zap.remove_liquidity_one_coin(amount, 0, expectedDaiAmount, receiver);
         vm.stopPrank();
 
         assertGe(daiAmount, expectedDaiAmount, "dai < expected");
@@ -197,11 +197,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = initialSupply / 3;
 
         uint256 usdcBalanceBefore = ERC20(USDC).balanceOf(receiver);
-        uint256 expectedUsdcAmount = zap.calc_withdraw_one_coin(POOL, amount, 1);
+        uint256 expectedUsdcAmount = zap.calc_withdraw_one_coin(amount, 1);
 
         vm.startPrank(INITIAL_DEPOSITOR);
         ERC20(POOL).safeApprove(address(zap), amount);
-        uint256 usdcAmount = zap.remove_liquidity_one_coin(POOL, amount, 1, expectedUsdcAmount, receiver);
+        uint256 usdcAmount = zap.remove_liquidity_one_coin(amount, 1, expectedUsdcAmount, receiver);
         vm.stopPrank();
 
         assertGe(usdcAmount, expectedUsdcAmount, "usdc < expected");
@@ -217,11 +217,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
         uint256 amount = initialSupply / 3;
 
         uint256 usdtBalanceBefore = ERC20(USDT).balanceOf(receiver);
-        uint256 expectedUsdtAmount = zap.calc_withdraw_one_coin(POOL, amount, 2);
+        uint256 expectedUsdtAmount = zap.calc_withdraw_one_coin(amount, 2);
 
         vm.startPrank(INITIAL_DEPOSITOR);
         ERC20(POOL).safeApprove(address(zap), amount);
-        uint256 usdtAmount = zap.remove_liquidity_one_coin(POOL, amount, 2, expectedUsdtAmount, receiver);
+        uint256 usdtAmount = zap.remove_liquidity_one_coin(amount, 2, expectedUsdtAmount, receiver);
         vm.stopPrank();
 
         assertGe(usdtAmount, expectedUsdtAmount, "usdt < expected");
@@ -238,11 +238,11 @@ contract TestDepositZapMorphoAaveV2USD is BaseTest {
 
         uint256 daiBalanceBefore = ERC20(DAI).balanceOf(receiver);
         uint256 usdcBalanceBefore = ERC20(USDC).balanceOf(receiver);
-        uint256 expectedLp = zap.calc_token_amount(POOL, amounts, false).percentAdd(1);
+        uint256 expectedLp = zap.calc_token_amount(amounts, false).percentAdd(1);
 
         vm.startPrank(INITIAL_DEPOSITOR);
         ERC20(POOL).safeApprove(address(zap), expectedLp);
-        uint256 lp = zap.remove_liquidity_imbalance(POOL, amounts, expectedLp, receiver);
+        uint256 lp = zap.remove_liquidity_imbalance(amounts, expectedLp, receiver);
         vm.stopPrank();
 
         assertApproxLeAbs(lp, expectedLp, 1e16, "lp < expected");

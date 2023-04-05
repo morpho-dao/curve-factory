@@ -19,7 +19,7 @@ interface CurveBase:
     def remove_liquidity_imbalance(amounts: uint256[BASE_N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
     def calc_withdraw_one_coin(token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
-    def coins(i: uint256) -> address: view
+    def coins(i: int128) -> address: view
 
 interface SupplyVault:
     def deposit(assets: uint256, receiver: address) -> uint256: nonpayable
@@ -30,7 +30,7 @@ interface SupplyVault:
     def asset() -> address: view
 
 
-BASE_N_COINS: constant(int128) = 3
+BASE_N_COINS: constant(uint256) = 3
 
 BASE_POOL: constant(address) = 0xddA1B81690b530DE3C48B3593923DF0A6C5fe92E
 BASE_COINS: constant(address[BASE_N_COINS]) = [

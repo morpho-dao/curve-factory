@@ -1,4 +1,4 @@
-# @version 0.2.15
+# @version 0.3.7
 """
 @title "Zap" Depositer for permissionless Morpho-Aave V2 USD metapools
 @author Morpho Labs
@@ -57,8 +57,8 @@ def __init__():
         coin: address = base_coins[i]
         ma_coin: address = ma_coins[i]
 
-        ERC20(coin).approve(ma_coin, MAX_UINT256)
-        ERC20(ma_coin).approve(BASE_POOL, MAX_UINT256)
+        ERC20(coin).approve(ma_coin, max_value(uint256))
+        ERC20(ma_coin).approve(BASE_POOL, max_value(uint256))
 
 
 @view
